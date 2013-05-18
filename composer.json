@@ -9,7 +9,6 @@
     }
   ],
   "require": {
-    "symfony/console": "v2.3.0-RC1",
     "symfony/process": "v2.3.0-RC1",
     "symfony/finder": "v2.3.0-RC1",
     "nategood/commando": "0.2.1"
