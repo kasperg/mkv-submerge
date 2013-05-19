@@ -1,0 +1,17 @@
+{
+  "name": "kasperg/mkv-submerge",
+  "description": "Find and merge subtitles into mkv video files",
+  "minimum-stability": "dev",
+  "authors": [
+    {
+      "name": "Kasper Garnæs",
+      "email": "kasper.garnaes@gmail.com"
+    }
+  ],
+  "require": {
+    "symfony/console": "v2.3.0-RC1",
+    "symfony/process": "v2.3.0-RC1",
+    "symfony/finder": "v2.3.0-RC1",
+    "nategood/commando": "0.2.1"
+  }
+}
