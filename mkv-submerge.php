@@ -2,55 +2,103 @@
 
 require 'vendor/autoload.php';
 
+use Symfony\Component\Console\Application;
+use \Symfony\Component\Console\Command\Command;
+use \Symfony\Component\Console\Input\InputInterface;
+use \Symfony\Component\Console\Input\InputOption;
+use \Symfony\Component\Console\Output\OutputInterface;
 use \Symfony\Component\Finder\Finder;
 use \Symfony\Component\Process\Process;
-use \Commando\Command;
 
-$merge = new Command();
-$merge->option('dir')
-  ->describedAs('Base directory when searching for mkv files. Default: Current directory.');
-$merge->option('mkvmerge')
-  ->describedAs('Path to mkvmerge executable. Default: mkvmerge');
-$merge->option('periscope')
-  ->describedAs('Path to periscope executable. Default: periscope');
-$merge->option('lang')
-  ->describedAs('Language to retrieve subtitles in. Default: en');
-$merge->option('keep')
-  ->describedAs('Keep original files. Default: true')
-  ->boolean();
+class MergeCommand extends Command
+{
 
-// Extract values or set default.
-$dir = (!empty($merge['dir'])) ? realpath($merge['dir']) : getcwd();
-$periscope = (!empty($merge['periscope'])) ? $merge['periscope'] : 'periscope';
-$mkvMerge = (!empty($merge['mkvmerge'])) ? $merge['mkvmerge'] : 'mkvmerge';
-$lang = (!empty($merge['lang'])) ? $merge['lang'] : 'en';
-$keep = (!isset($merge['keep'])) ? $merge['keep'] : true;
+    protected function configure()
+    {
+        $this
+          ->setName('mkvsubmerge:merge')
+          ->setAliases(array('merge'))
+          ->setDescription('Find and merge subtitles into MKV video files')
+          ->addOption(
+              'dir',
+              null,
+              InputOption::VALUE_OPTIONAL,
+              'Base directory when searching for mkv files.',
+              getcwd()
+          )
+          ->addOption(
+              'mkvmerge',
+              null,
+              InputOption::VALUE_OPTIONAL,
+              'Path to mkvmerge executable.',
+              'mkvmerge'
+          )
+          ->addOption(
+              'periscope',
+              null,
+              InputOption::VALUE_OPTIONAL,
+              'Path to periscope executable.',
+              'periscope'
+          )
+          ->addOption(
+              'lang',
+              null,
+              InputOption::VALUE_OPTIONAL,
+              'Language to retrieve subtitles in.',
+              'en'
+          )
+          ->addOption(
+              'keep',
+              null,
+              InputOption::VALUE_OPTIONAL,
+              'Keep original files.',
+              true
+          );
+    }
 
-echo 'OUT > Searching for mkv files in ' . $dir . PHP_EOL;
-$finder = new Finder();
-$files = $finder->in($dir)->name('*.mkv')->notName('*.subs.mkv')->files();
-foreach ($files as $file) {
-    echo 'OUT > Processing ' . $file->getRealPath() . PHP_EOL;
+    protected function execute(InputInterface $input, OutputInterface $output)
+    {
+        $dir = $input->getOption('dir');
+        $periscope = $input->getOption('periscope');
+        $mkvMerge = $input->getOption('mkvmerge');
+        $lang = $input->getOption('lang');
+        $keep = $input->getOption('keep');
 
-    $periscopeCommand = $periscope . ' ' . escapeshellarg($file->getRealPath()) . ' -l ' . $lang . ' --force';
-    $periscopeProces = new \Symfony\Component\Process\Process($periscopeCommand);
-    $periscopeProces->run();
-    preg_match('/Downloaded (\d+) subtitles/i', $periscopeProces->getErrorOutput(), $matches);
+        $output->writeln('Searching for mkv files in ' . $dir);
+        $finder = new Finder();
+        $files = $finder->in($dir)->name('*.mkv')->notName('*.subs.mkv')->files();
+        foreach ($files as $file) {
+            $output->writeln('Processing ' . $file->getRealPath());
 
-    echo 'OUT > ' . $matches[1] . ' subtitle file(s) found' . PHP_EOL;
-    echo PHP_EOL;
+            $periscopeCommand = $periscope . ' ' . escapeshellarg($file->getRealPath()) . ' -l ' . $lang . ' --force';
+            $periscopeProces = new \Symfony\Component\Process\Process($periscopeCommand);
+            $periscopeProces->run();
+            preg_match(
+                '/Downloaded (\d+) subtitles/i',
+                $periscopeProces->getErrorOutput(),
+                $matches
+            );
 
-    $mkvMergeCommand = $mkvMerge . ' -o ' . escapeshellarg($file->getPath() . '/' . $file->getBasename('.mkv') . '.subs.mkv') . ' --default-track 0 --language 0:' . $lang . ' ' . escapeshellarg($file->getRealPath());
-    $mkvProcess = new Process($mkvMergeCommand);
-    $mkvProcess->setTimeout(600);
-    $mkvProcess->run(
-        function ($type, $buffer) {
-            if (Process::ERR === $type) {
-                echo 'ERR > ' . $buffer;
-            } else {
-                echo 'OUT > ' . $buffer;
-            }
+            $output->writeln($matches[1] . ' subtitle file(s) found');
+
+            $mkvMergeCommand = $mkvMerge . ' -o ' . escapeshellarg(
+                  $file->getPath() . '/' . $file->getBasename(
+                      '.mkv'
+                  ) . '.subs.mkv'
+              ) . ' --default-track 0 --language 0:' . $lang . ' ' . escapeshellarg(
+                  $file->getRealPath()
+              );
+            $mkvProcess = new Process($mkvMergeCommand);
+            $mkvProcess->setTimeout(600);
+            $mkvProcess->run(
+                function ($type, $buffer) use($output) {
+                    $output->write($buffer);
+                }
+            );
         }
-    );
-    break;
+    }
 }
+
+$application = new Application();
+$application->add(new MergeCommand());
+$application->run();
