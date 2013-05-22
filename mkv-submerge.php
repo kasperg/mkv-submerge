@@ -65,8 +65,7 @@ class MergeCommand extends Command
         $keep = $input->getOption('keep');
 
         $this->write($output, '<comment>Searching for mkv files in ' . $dir . '</comment>', TRUE);
-        $finder = new Finder();
-        $files = $finder->in($dir)->name('*.mkv')->notName('*.subs.mkv')->files();
+        $files = Finder::create()->in($dir)->name('*.mkv')->notName('*.subs.mkv')->files();
         foreach ($files as $file) {
             $this->write($output, 'Processing ' . $file->getRealPath(), TRUE);
 
@@ -75,35 +74,47 @@ class MergeCommand extends Command
               escapeshellarg($file->getRealPath()),
               '-l ' . $lang,
               '--force');
-            $periscopeProces = new \Symfony\Component\Process\Process(implode(' ', $periscopeCommand));
+            $periscopeCommand = implode(' ', $periscopeCommand);
+            $this->write($output, $periscopeCommand, TRUE, OutputInterface::VERBOSITY_VERBOSE);
+            $periscopeProces = new \Symfony\Component\Process\Process($periscopeCommand);
             $periscopeProces->run();
+
+            $this->write($output, $periscopeProces->getErrorOutput(), TRUE, OutputInterface::VERBOSITY_VERBOSE);
             preg_match(
                 '/Downloaded (\d+) subtitles/i',
                 $periscopeProces->getErrorOutput(),
                 $matches
             );
-            $this->write($output, $periscopeProces->getErrorOutput(), TRUE, OutputInterface::VERBOSITY_VERBOSE);
             $this->write($output, $matches[1] . ' subtitle file(s) found', TRUE);
 
-            $this->write($output, 'Merging subtitles into file', TRUE);
-            $mkvMergeCommand = array(
-              $mkvMerge,
-              '-o ' . escapeshellarg($file->getPath() . '/' . $file->getBasename('.mkv') . '.subs.mkv'),
-              '--default-track 0',
-              '--language 0:' . $lang,
-              escapeshellarg($file->getRealPath()),
-            );
-            $mkvProcess = new Process(implode(' ', $mkvMergeCommand));
-            $mkvProcess->setTimeout(600);
-            $command = $this;
-            $mkvProcess->run(
-                function ($type, $buffer) use($command, $output) {
-                  $verbose = (stripos($buffer, 'Progress') === 0) ? OutputInterface::VERBOSITY_NORMAL : OutputInterface::VERBOSITY_VERBOSE;
-                  $command->write($output, $buffer, FALSE, $verbose);
+            if ($matches[1] > 0) {
+                $this->write($output, 'Merging subtitles into file', TRUE);
+                $mkvMergeCommand = array(
+                  $mkvMerge,
+                  '-o ' . escapeshellarg($file->getPath() . '/' . $file->getBasename('.mkv') . '.subs.mkv'),
+                  '--default-track 0',
+                  '--language 0:' .$lang,
+                  escapeshellarg($file->getPath() . '/' . $file->getBasename('.mkv') . '.srt'),
+                  escapeshellarg($file->getRealPath()),
+                );
+                $mkvMergeCommand = implode(' ', $mkvMergeCommand);
+                $this->write($output, $mkvMergeCommand, TRUE, OutputInterface::VERBOSITY_VERBOSE);
+                $mkvProcess = new Process($mkvMergeCommand);
+                $mkvProcess->setTimeout(600);
+                $command = $this;
+                $mkvProcess->run(
+                    function ($type, $buffer) use($command, $output) {
+                      $verbose = (stripos($buffer, 'Progress') === 0) ? OutputInterface::VERBOSITY_NORMAL : OutputInterface::VERBOSITY_VERBOSE;
+                      $command->write($output, $buffer, FALSE, $verbose);
+                    }
+                );
+
+                if (!$keep) {
+                    unlink($file->getPath() . '/' . $file->getBasename('.mkv') . '.srt');
+                    unlink($file->getRealPath());
                 }
-            );
+            }
         }
-        break;
     }
 
     public function write(OutputInterface $output, $messages, $newline = FALSE, $verbosity = OutputInterface::VERBOSITY_NORMAL, $type = OutputInterface::OUTPUT_NORMAL) {
