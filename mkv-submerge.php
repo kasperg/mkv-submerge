@@ -48,11 +48,11 @@ class MergeCommand extends Command
               'en'
           )
           ->addOption(
-              'keep',
+              'cleanup',
               null,
               InputOption::VALUE_OPTIONAL,
-              'Keep original files.',
-              true
+              'Delete original files.',
+              false
           );
     }
 
@@ -62,7 +62,7 @@ class MergeCommand extends Command
         $periscope = $input->getOption('periscope');
         $mkvMerge = $input->getOption('mkvmerge');
         $lang = $input->getOption('lang');
-        $keep = $input->getOption('keep');
+        $cleanup = $input->getOption('cleanup');
 
         $this->write($output, '<comment>Searching for mkv files in ' . $dir . '</comment>', TRUE);
         $files = Finder::create()->in($dir)->name('*.mkv')->notName('*.subs.mkv')->files();
@@ -108,9 +108,18 @@ class MergeCommand extends Command
                       $command->write($output, $buffer, FALSE, $verbose);
                     }
                 );
+                $this->write($output, '', TRUE);
 
-                if (!$keep) {
-                    unlink($file->getPath() . '/' . $file->getBasename('.mkv') . '.srt');
+                $mergeSuccess = $mkvProcess->getExitCodeText() == 'OK';
+                if ($mergeSuccess) {
+                    $this->write($output, '<info>Merge complete for ' . $file->getRealPath() . '</info>', TRUE);
+                } else {
+                    $this->write($output, '<error>Merge error for ' . $file->getRealPath() . ': ' . $mkvProcess->getExitCodeText() . '</error>', TRUE);
+                }
+
+                if ($mergeSuccess && $cleanup) {
+                    $this->write($output, '<comment>Cleaning up original files</comment>', true);
+                    unlink($file->getPath() . '/' . $baseName . '.srt');
                     unlink($file->getRealPath());
                 }
             }
