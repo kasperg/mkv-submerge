@@ -65,9 +65,11 @@ class MergeCommand extends Command
         $cleanup = $input->getOption('cleanup');
 
         $this->write($output, '<comment>Searching for mkv files in ' . $dir . '</comment>', TRUE);
-        $files = Finder::create()->in($dir)->name('*.mkv')->notName('*.subs.mkv')->files();
+        $files = Finder::create()->in($dir)->name('/\.(avi|mkv)$/')->notName('*.subs.mkv')->sortByName()->files();
         foreach ($files as $file) {
-            $this->write($output, 'Processing ' . $file->getRealPath(), TRUE);
+            $this->write($output, '<comment>Processing ' . $file->getRealPath() . '</comment>', TRUE);
+
+            $baseName = substr($file->getFilename(), 0, strrpos($file->getFilename(), '.'));
 
             $periscopeCommand = array(
               $periscope,
@@ -91,10 +93,10 @@ class MergeCommand extends Command
                 $this->write($output, 'Merging subtitles into file', TRUE);
                 $mkvMergeCommand = array(
                   $mkvMerge,
-                  '-o ' . escapeshellarg($file->getPath() . '/' . $file->getBasename('.mkv') . '.subs.mkv'),
+                  '-o ' . escapeshellarg($file->getPath() . '/' . $baseName . '.subs.mkv'),
                   '--default-track 0',
                   '--language 0:' .$lang,
-                  escapeshellarg($file->getPath() . '/' . $file->getBasename('.mkv') . '.srt'),
+                  escapeshellarg($file->getPath() . '/' . $baseName . '.srt'),
                   escapeshellarg($file->getRealPath()),
                 );
                 $mkvMergeCommand = implode(' ', $mkvMergeCommand);
