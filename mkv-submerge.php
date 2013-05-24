@@ -64,7 +64,7 @@ class MergeCommand extends Command
         $lang = $input->getOption('lang');
         $cleanup = $input->getOption('cleanup');
 
-        $this->write($output, '<comment>Searching for mkv files in ' . $dir . '</comment>', TRUE);
+        $this->write($output, '<comment>Searching for video files in ' . $dir . '</comment>', TRUE);
         $files = Finder::create()->in($dir)->name('/\.(avi|mkv)$/')->notName('*.subs.mkv')->sortByName()->files();
         foreach ($files as $file) {
             $this->write($output, '<comment>Processing ' . $file->getRealPath() . '</comment>', TRUE);
@@ -90,7 +90,7 @@ class MergeCommand extends Command
             $this->write($output, $matches[1] . ' subtitle file(s) found', TRUE);
 
             if ($matches[1] > 0) {
-                $this->write($output, 'Merging subtitles into file', TRUE);
+                $this->write($output, 'Merging subtitles into MKV file', TRUE);
                 $mkvMergeCommand = array(
                   $mkvMerge,
                   '-o ' . escapeshellarg($file->getPath() . '/' . $baseName . '.subs.mkv'),
