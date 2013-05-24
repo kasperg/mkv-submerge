@@ -116,6 +116,7 @@ class MergeCommand extends Command
                 if ($mergeSuccess) {
                     $this->write($output, '<info>Merge complete for ' . $file->getRealPath() . '</info>', TRUE);
                 } else {
+                    $this->write($output, $mkvProcess->getOutput(), TRUE);
                     $this->write($output, '<error>Merge error for ' . $file->getRealPath() . ': ' . $mkvProcess->getExitCodeText() . '</error>', TRUE);
                 }
 
