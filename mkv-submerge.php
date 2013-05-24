@@ -51,8 +51,11 @@ class MergeCommand extends Command
               'cleanup',
               null,
               InputOption::VALUE_OPTIONAL,
-              'Delete original files.',
-              false
+              'Strategy for deleting original files. Supported options:' . PHP_EOL .
+              '- none: Never not delete original files' . PHP_EOL .
+              '- merge-complete: Delete if the merge process leaves an MKV file' . PHP_EOL .
+              '- merge-success: Delete if the merge process completed without errors or warnings',
+              'none'
           );
     }
 
@@ -120,7 +123,8 @@ class MergeCommand extends Command
                     $this->write($output, '<error>Merge error for ' . $file->getRealPath() . ': ' . $mkvProcess->getExitCodeText() . '</error>', TRUE);
                 }
 
-                if ($mergeSuccess && $cleanup) {
+                if (($cleanup == 'merge-success' && $mergeSuccess) ||
+                    ($cleanup == 'merge-complete' && is_file($file->getPath() . '/' . $baseName . '.subs.mkv'))) {
                     $this->write($output, '<comment>Cleaning up original files</comment>', true);
                     unlink($file->getPath() . '/' . $baseName . '.srt');
                     unlink($file->getRealPath());
