@@ -21,7 +21,7 @@ Apparently [periscope](https://code.google.com/p/periscope/) cannot be installed
 
 1. Download or `git clone https://github.com/kasperg/mkv-submerge.git` to a directory
 2. From the directory run `composer install` to install external dependencies.
-3. Run `php mkv-submerge.php help merge` to see the available options
+3. Run `./bin/mkv-submerge help merge` to see the available options
 
 
 ## Credits
