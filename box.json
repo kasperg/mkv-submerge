@@ -1,0 +1,9 @@
+{
+  "alias": "mkv-submerge.phar",
+  "chmod": "0755",
+  "directories": ["vendor", "src"],
+  "git-version": "git_tag",
+  "output": "mkv-submerge-@git-version@.phar",
+  "main": "bin/mkv-submerge",
+  "stub": true
+}
