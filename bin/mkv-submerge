@@ -4,6 +4,6 @@
 require __DIR__ . '/../vendor/autoload.php';
 require __DIR__ . '/../src/MkvSubmerge/MergeCommand.php';
 
-$application = new \Symfony\Component\Console\Application();
+$application = new \Symfony\Component\Console\Application('mkv-submerge', '1.0.0');
 $application->add(new \MkvSubmerge\MergeCommand());
 $application->run();
