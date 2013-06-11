@@ -17,12 +17,12 @@ class MergeCommand extends Command
         $this
           ->setName('mkvsubmerge:merge')
           ->setAliases(array('merge'))
-          ->setDescription('Find and merge subtitles into MKV video files')
+          ->setDescription('Find and merge subtitles into video files')
           ->addOption(
               'dir',
               null,
               InputOption::VALUE_OPTIONAL,
-              'Base directory when searching for mkv files.',
+              'Base directory when searching for video files to process.',
               getcwd()
           )
           ->addOption(
