@@ -26,6 +26,13 @@ class MergeCommand extends Command
               getcwd()
           )
           ->addOption(
+              'ext',
+              null,
+              InputOption::VALUE_OPTIONAL | InputOption::VALUE_IS_ARRAY,
+              'File extensions for video files to process.',
+              array('mkv', 'avi', 'mp4')
+          )
+          ->addOption(
               'mkvmerge',
               null,
               InputOption::VALUE_OPTIONAL,
@@ -61,13 +68,15 @@ class MergeCommand extends Command
     protected function execute(InputInterface $input, OutputInterface $output)
     {
         $dir = $input->getOption('dir');
+        $fileExtensions = $input->getOption('ext');
         $periscope = $input->getOption('periscope');
         $mkvMerge = $input->getOption('mkvmerge');
         $lang = $input->getOption('lang');
         $cleanup = $input->getOption('cleanup');
 
-        $this->write($output, '<comment>Searching for video files in ' . $dir . '</comment>', true);
-        $files = Finder::create()->in($dir)->name('/\.(avi|mkv)$/')->notName('*.subs.mkv')->sortByName()->files();
+        $this->write($output, '<comment>Searching for ' . implode(', ', $fileExtensions) . ' files in ' . $dir . '</comment>', true);
+        $namePattern = '/\.(' . implode('|', $fileExtensions)  . ')$/';
+        $files = Finder::create()->in($dir)->name($namePattern)->notName('*.subs.mkv')->sortByName()->files();
         foreach ($files as $file) {
             $this->write($output, '<comment>Processing ' . $file->getRealPath() . '</comment>', true);
 
